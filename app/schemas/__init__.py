@@ -31,6 +31,9 @@ from app.schemas.tag import TagCreate, TagUpdate, TagResponse
 # Team Schemas
 from app.schemas.team import TeamCreate, TeamUpdate, TeamResponse
 
+# Version Schemas
+from app.schemas.version import VersionCreate, VersionUpdate, VersionResponse
+
 __all__ = [
     # Auth
     "Token",
@@ -76,4 +79,8 @@ __all__ = [
     "TeamCreate",
     "TeamUpdate",
     "TeamResponse",
+    # Version
+    "VersionCreate",
+    "VersionUpdate",
+    "VersionResponse",
 ]
