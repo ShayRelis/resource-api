@@ -158,3 +158,16 @@ async def test_registry(
     assert response.status_code == 201
     return response.json()
 
+
+@pytest.fixture
+async def test_version(async_client: httpx.AsyncClient, auth_headers: Dict[str, str]) -> Dict:
+    """Create a test version and return its data."""
+    version_data = {"name": "Test Version v1.0.0"}
+    response = await async_client.post(
+        "/api/v1/versions/",
+        json=version_data,
+        headers=auth_headers
+    )
+    assert response.status_code == 201
+    return response.json()
+
