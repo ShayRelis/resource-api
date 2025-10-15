@@ -11,7 +11,7 @@ from sqlalchemy import select
 from app.db.database import async_session
 from app.models import (
     Company, User, UserRole, CloudProvider, RegistryProvider, 
-    ServiceType, Tag, Team, RegistryCredential, Registry, ContainerImage
+    ServiceType, Tag, Team, RegistryCredential, Registry, ContainerImage, Version
 )
 
 
@@ -151,6 +151,32 @@ CONTAINER_IMAGES = [
         "registry_name": "Relis Production Registry",
         "pushed_at": "2025-10-03T09:15:00",
     },
+    {
+        "name": "relis-worker",
+        "tag": "v1.0.0",
+        "registry_name": "Relis Production Registry",
+        "pushed_at": "2025-10-01T10:30:00",
+    },
+]
+
+
+VERSIONS = [
+    {
+        "name": "Release 1.0.0",
+        "container_images": [
+            ("relis-api", "v1.0.0"),
+            ("relis-frontend", "v2.1.0"),
+            ("relis-worker", "v1.0.0"),
+        ],
+    },
+    {
+        "name": "Release 1.0.1",
+        "container_images": [
+            ("relis-api", "v1.0.1"),
+            ("relis-frontend", "v2.1.0"),
+            ("relis-worker", "v1.0.0"),
+        ],
+    },
 ]
 
 
@@ -163,6 +189,7 @@ async def seed():
         registry_provider_by_name = {}
         registry_credential_by_name = {}
         registry_by_name = {}
+        container_image_by_key = {}
 
         # Seed companies
         print("Seeding companies...")
@@ -377,9 +404,41 @@ async def seed():
                     pushed_at=datetime.fromisoformat(payload["pushed_at"]),
                 )
                 session.add(image)
+                await session.flush()
                 print(f"  ✓ Created container image: {image.name}:{image.tag}")
             else:
                 print(f"  - Container image already exists: {image.name}:{image.tag}")
+
+            container_image_by_key[(image.name, image.tag)] = image
+
+        # Seed versions
+        print("\nSeeding versions...")
+        for payload in VERSIONS:
+            result = await session.execute(
+                select(Version).where(Version.name == payload["name"])
+            )
+            version = result.scalar_one_or_none()
+
+            if version is None:
+                version = Version(name=payload["name"])
+                session.add(version)
+                await session.flush()
+                print(f"  ✓ Created version: {version.name}")
+                
+                # Associate container images with this version
+                for image_key in payload["container_images"]:
+                    image = container_image_by_key.get(image_key)
+                    if image:
+                        # Insert into association table
+                        from app.models import version_container_images
+                        stmt = version_container_images.insert().values(
+                            version_id=version.id,
+                            container_image_id=image.id
+                        )
+                        await session.execute(stmt)
+                        print(f"    → Associated {image.name}:{image.tag}")
+            else:
+                print(f"  - Version already exists: {version.name}")
 
         await session.commit()
 
