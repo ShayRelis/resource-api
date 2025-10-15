@@ -12,6 +12,7 @@ from .service_type import ServiceType
 from .tag import Tag
 from .team import Team
 from .user import UserRole, User
+from .version import Version, version_container_images
 
 
 # Make all models available at package level
@@ -28,4 +29,6 @@ __all__ = [
     "Team",
     "User",
     "UserRole",
+    "Version",
+    "version_container_images",
 ]
