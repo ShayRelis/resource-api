@@ -3,6 +3,15 @@
 import pytest
 import httpx
 from typing import Dict, AsyncGenerator
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncConnection
+from sqlalchemy.orm import sessionmaker
+
+from main import app
+from app.api.deps import get_db
+from app.core.config import get_settings
+
+
+settings = get_settings()
 
 
 @pytest.fixture(scope="session")
@@ -12,10 +21,54 @@ def base_url() -> str:
 
 
 @pytest.fixture
-async def async_client(base_url: str) -> AsyncGenerator[httpx.AsyncClient, None]:
-    """Create an async HTTP client for testing."""
-    async with httpx.AsyncClient(base_url=base_url, timeout=10.0) as client:
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Create a database session with automatic rollback for testing."""
+    from sqlalchemy.pool import NullPool
+    
+    engine = create_async_engine(
+        settings.DATABASE_URL,
+        echo=False,
+        future=True,
+        poolclass=NullPool,
+        connect_args={"statement_cache_size": 0},
+    )
+    
+    async with engine.connect() as connection:
+        transaction = await connection.begin()
+        
+        async_session_factory = sessionmaker(
+            connection,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+        
+        async with async_session_factory() as session:
+            yield session
+            await session.close()
+        
+        await transaction.rollback()
+    
+    await engine.dispose()
+
+
+@pytest.fixture
+async def async_client(db_session: AsyncSession) -> AsyncGenerator[httpx.AsyncClient, None]:
+    """Create an async HTTP client for testing with database dependency override."""
+    async def override_get_db():
+        yield db_session
+    
+    app.dependency_overrides[get_db] = override_get_db
+    
+    # Use the app directly with ASGI transport instead of external HTTP server
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+        timeout=10.0
+    ) as client:
         yield client
+    
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -68,15 +121,7 @@ async def test_company(async_client: httpx.AsyncClient, auth_headers: Dict[str, 
         headers=auth_headers
     )
     assert response.status_code == 201
-    company = response.json()
-    
-    yield company
-    
-    # Cleanup: delete the company after test
-    await async_client.delete(
-        f"/api/v1/companies/{company['id']}",
-        headers=auth_headers
-    )
+    return response.json()
 
 
 @pytest.fixture
@@ -89,15 +134,7 @@ async def test_registry_provider(async_client: httpx.AsyncClient, auth_headers: 
         headers=auth_headers
     )
     assert response.status_code == 201
-    provider = response.json()
-    
-    yield provider
-    
-    # Cleanup: delete the provider after test
-    await async_client.delete(
-        f"/api/v1/registry-providers/{provider['id']}",
-        headers=auth_headers
-    )
+    return response.json()
 
 
 @pytest.fixture
@@ -119,13 +156,5 @@ async def test_registry(
         headers=auth_headers
     )
     assert response.status_code == 201
-    registry = response.json()
-    
-    yield registry
-    
-    # Cleanup: delete the registry after test
-    await async_client.delete(
-        f"/api/v1/registries/{registry['id']}",
-        headers=auth_headers
-    )
+    return response.json()
 
