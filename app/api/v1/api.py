@@ -14,6 +14,7 @@ from app.api.v1.endpoints import (
     container_images,
     service_types,
     tags,
+    versions,
 )
 
 api_router = APIRouter()
@@ -32,4 +33,5 @@ api_router.include_router(registry_credentials.router, prefix="/registry-credent
 api_router.include_router(container_images.router, prefix="/container-images", tags=["container-images"])
 api_router.include_router(service_types.router, prefix="/service-types", tags=["service-types"])
 api_router.include_router(tags.router, prefix="/tags", tags=["tags"])
+api_router.include_router(versions.router, prefix="/versions", tags=["versions"])
 
