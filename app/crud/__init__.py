@@ -10,6 +10,7 @@ from app.crud.crud_registry_credential import registry_credential
 from app.crud.crud_container_image import container_image
 from app.crud.crud_service_type import service_type
 from app.crud.crud_tag import tag
+from app.crud.crud_version import version
 
 __all__ = [
     "user",
@@ -22,5 +23,6 @@ __all__ = [
     "container_image",
     "service_type",
     "tag",
+    "version",
 ]
 
