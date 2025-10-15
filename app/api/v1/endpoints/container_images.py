@@ -4,6 +4,7 @@ from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_current_active_user, get_db
 from app.crud import container_image as crud_container_image
@@ -29,9 +30,25 @@ async def create_container_image(
         
     Returns:
         Created container image
+        
+    Raises:
+        HTTPException: If registry_id does not exist
     """
-    container_image = await crud_container_image.create(db, obj_in=container_image_in)
-    return container_image
+    try:
+        container_image = await crud_container_image.create(db, obj_in=container_image_in)
+        return container_image
+    except IntegrityError as e:
+        # Handle foreign key constraint violations
+        await db.rollback()
+        if "registry_id" in str(e.orig):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registry not found",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Database integrity error",
+        )
 
 
 @router.get("/", response_model=List[ContainerImageResponse])

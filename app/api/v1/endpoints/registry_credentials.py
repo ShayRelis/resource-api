@@ -4,6 +4,7 @@ from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_current_active_user, get_db
 from app.crud import registry_credential as crud_registry_credential
@@ -29,9 +30,25 @@ async def create_registry_credential(
         
     Returns:
         Created registry credential
+        
+    Raises:
+        HTTPException: If registry_provider_id does not exist
     """
-    registry_credential = await crud_registry_credential.create(db, obj_in=registry_credential_in)
-    return registry_credential
+    try:
+        registry_credential = await crud_registry_credential.create(db, obj_in=registry_credential_in)
+        return registry_credential
+    except IntegrityError as e:
+        # Handle foreign key constraint violations
+        await db.rollback()
+        if "registry_provider_id" in str(e.orig):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registry provider not found",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Database integrity error",
+        )
 
 
 @router.get("/", response_model=List[RegistryCredentialResponse])

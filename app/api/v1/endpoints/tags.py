@@ -4,6 +4,7 @@ from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_current_active_user, get_db
 from app.crud import tag as crud_tag
@@ -29,9 +30,25 @@ async def create_tag(
         
     Returns:
         Created tag
+        
+    Raises:
+        HTTPException: If company_id does not exist
     """
-    tag = await crud_tag.create(db, obj_in=tag_in)
-    return tag
+    try:
+        tag = await crud_tag.create(db, obj_in=tag_in)
+        return tag
+    except IntegrityError as e:
+        # Handle foreign key constraint violations
+        await db.rollback()
+        if "company_id" in str(e.orig):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Company not found",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Database integrity error",
+        )
 
 
 @router.get("/", response_model=List[TagResponse])
