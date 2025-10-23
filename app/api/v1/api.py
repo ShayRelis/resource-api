@@ -6,6 +6,7 @@ from app.api.v1.endpoints import (
     auth,
     users,
     companies,
+    components,
     teams,
     cloud_providers,
     registry_providers,
@@ -25,6 +26,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 # Resource routes
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(companies.router, prefix="/companies", tags=["companies"])
+api_router.include_router(components.router, prefix="/components", tags=["components"])
 api_router.include_router(teams.router, prefix="/teams", tags=["teams"])
 api_router.include_router(cloud_providers.router, prefix="/cloud-providers", tags=["cloud-providers"])
 api_router.include_router(registry_providers.router, prefix="/registry-providers", tags=["registry-providers"])

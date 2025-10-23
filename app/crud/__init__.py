@@ -2,6 +2,7 @@
 
 from app.crud.crud_user import user
 from app.crud.crud_company import company
+from app.crud.crud_component import component
 from app.crud.crud_team import team
 from app.crud.crud_cloud_provider import cloud_provider
 from app.crud.crud_registry_provider import registry_provider
@@ -15,6 +16,7 @@ from app.crud.crud_version import version
 __all__ = [
     "user",
     "company",
+    "component",
     "team",
     "cloud_provider",
     "registry_provider",

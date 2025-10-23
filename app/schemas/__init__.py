@@ -7,6 +7,9 @@ from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserLogin
 # Company Schemas
 from app.schemas.company import CompanyCreate, CompanyUpdate, CompanyResponse
 
+# Component Schemas
+from app.schemas.component import ComponentCreate, ComponentUpdate, ComponentResponse
+
 # Cloud Provider Schemas
 from app.schemas.cloud_provider import CloudProviderCreate, CloudProviderUpdate, CloudProviderResponse
 
@@ -47,6 +50,10 @@ __all__ = [
     "CompanyCreate",
     "CompanyUpdate",
     "CompanyResponse",
+    # Component
+    "ComponentCreate",
+    "ComponentUpdate",
+    "ComponentResponse",
     # Cloud Provider
     "CloudProviderCreate",
     "CloudProviderUpdate",

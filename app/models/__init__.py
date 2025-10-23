@@ -4,6 +4,7 @@ from app.db.database import Base
 
 from .cloud_provider import CloudProvider
 from .company import Company
+from .component import Component, component_teams, component_tags, component_container_images, component_versions
 from .container_image import ContainerImage
 from .registry import Registry
 from .registry_credential import RegistryCredential
@@ -20,6 +21,11 @@ __all__ = [
     "Base",
     "CloudProvider",
     "Company",
+    "Component",
+    "component_teams",
+    "component_tags",
+    "component_container_images",
+    "component_versions",
     "ContainerImage",
     "Registry",
     "RegistryCredential",

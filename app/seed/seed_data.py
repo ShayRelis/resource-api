@@ -11,7 +11,8 @@ from sqlalchemy import select
 from app.db.database import async_session
 from app.models import (
     Company, User, UserRole, CloudProvider, RegistryProvider, 
-    ServiceType, Tag, Team, RegistryCredential, Registry, ContainerImage, Version
+    ServiceType, Tag, Team, RegistryCredential, Registry, ContainerImage, Version,
+    Component, component_teams, component_tags, component_container_images, component_versions
 )
 
 
@@ -180,6 +181,70 @@ VERSIONS = [
 ]
 
 
+COMPONENTS = [
+    {
+        "name": "API Gateway Service",
+        "description": "Main API gateway handling all REST requests",
+        "repository_url": "https://github.com/relis/api-gateway",
+        "is_managed": True,
+        "is_third_party": False,
+        "company_name": "Relis",
+        "team_names": ["Engineering", "DevOps"],
+        "tag_names": ["production", "critical"],
+        "container_image_keys": [("relis-api", "v1.0.0"), ("relis-api", "v1.0.1")],
+        "version_names": ["Release 1.0.0", "Release 1.0.1"],
+    },
+    {
+        "name": "Frontend Application",
+        "description": "React-based user interface",
+        "repository_url": "https://github.com/relis/frontend",
+        "is_managed": True,
+        "is_third_party": False,
+        "company_name": "Relis",
+        "team_names": ["Engineering"],
+        "tag_names": ["production"],
+        "container_image_keys": [("relis-frontend", "v2.1.0")],
+        "version_names": ["Release 1.0.0", "Release 1.0.1"],
+    },
+    {
+        "name": "Background Worker",
+        "description": "Async task processing service for heavy workloads",
+        "repository_url": "https://github.com/relis/worker",
+        "is_managed": True,
+        "is_third_party": False,
+        "company_name": "Relis",
+        "team_names": ["DevOps"],
+        "tag_names": ["production"],
+        "container_image_keys": [("relis-worker", "v1.0.0")],
+        "version_names": ["Release 1.0.0", "Release 1.0.1"],
+    },
+    {
+        "name": "PostgreSQL Database",
+        "description": "Primary relational database",
+        "repository_url": None,
+        "is_managed": False,
+        "is_third_party": True,
+        "company_name": "Relis",
+        "team_names": ["DevOps"],
+        "tag_names": ["production", "critical"],
+        "container_image_keys": [],
+        "version_names": [],
+    },
+    {
+        "name": "Redis Cache",
+        "description": "In-memory caching layer",
+        "repository_url": None,
+        "is_managed": False,
+        "is_third_party": True,
+        "company_name": "Relis",
+        "team_names": ["DevOps"],
+        "tag_names": ["production"],
+        "container_image_keys": [],
+        "version_names": [],
+    },
+]
+
+
 async def seed():
     from datetime import datetime
     
@@ -190,6 +255,9 @@ async def seed():
         registry_credential_by_name = {}
         registry_by_name = {}
         container_image_by_key = {}
+        team_by_name = {}
+        tag_by_name = {}
+        version_by_name = {}
 
         # Seed companies
         print("Seeding companies...")
@@ -277,9 +345,12 @@ async def seed():
                     company_id=company.id,
                 )
                 session.add(team)
+                await session.flush()
                 print(f"  ✓ Created team: {team.name} (Company: {payload['company_name']})")
             else:
                 print(f"  - Team already exists: {team.name}")
+
+            team_by_name[team.name] = team
 
         await session.flush()
 
@@ -298,9 +369,12 @@ async def seed():
                     company_id=company.id,
                 )
                 session.add(tag)
+                await session.flush()
                 print(f"  ✓ Created tag: {tag.name} (Company: {payload['company_name']})")
             else:
                 print(f"  - Tag already exists: {tag.name}")
+
+            tag_by_name[tag.name] = tag
 
         await session.flush()
 
@@ -439,6 +513,76 @@ async def seed():
                         print(f"    → Associated {image.name}:{image.tag}")
             else:
                 print(f"  - Version already exists: {version.name}")
+
+            version_by_name[version.name] = version
+
+        # Seed components
+        print("\nSeeding components...")
+        for payload in COMPONENTS:
+            result = await session.execute(
+                select(Component).where(Component.name == payload["name"])
+            )
+            component = result.scalar_one_or_none()
+
+            if component is None:
+                company = company_by_name[payload["company_name"]]
+                component = Component(
+                    name=payload["name"],
+                    description=payload["description"],
+                    repository_url=payload["repository_url"],
+                    is_managed=payload["is_managed"],
+                    is_third_party=payload["is_third_party"],
+                    company_id=company.id,
+                )
+                session.add(component)
+                await session.flush()
+                print(f"  ✓ Created component: {component.name}")
+
+                # Associate teams
+                for team_name in payload["team_names"]:
+                    team = team_by_name.get(team_name)
+                    if team:
+                        stmt = component_teams.insert().values(
+                            component_id=component.id,
+                            team_id=team.id
+                        )
+                        await session.execute(stmt)
+                        print(f"    → Associated with team: {team_name}")
+
+                # Associate tags
+                for tag_name in payload["tag_names"]:
+                    tag = tag_by_name.get(tag_name)
+                    if tag:
+                        stmt = component_tags.insert().values(
+                            component_id=component.id,
+                            tag_id=tag.id
+                        )
+                        await session.execute(stmt)
+                        print(f"    → Associated with tag: {tag_name}")
+
+                # Associate container images
+                for image_key in payload["container_image_keys"]:
+                    image = container_image_by_key.get(image_key)
+                    if image:
+                        stmt = component_container_images.insert().values(
+                            component_id=component.id,
+                            container_image_id=image.id
+                        )
+                        await session.execute(stmt)
+                        print(f"    → Associated with image: {image.name}:{image.tag}")
+
+                # Associate versions
+                for version_name in payload["version_names"]:
+                    version = version_by_name.get(version_name)
+                    if version:
+                        stmt = component_versions.insert().values(
+                            component_id=component.id,
+                            version_id=version.id
+                        )
+                        await session.execute(stmt)
+                        print(f"    → Associated with version: {version_name}")
+            else:
+                print(f"  - Component already exists: {component.name}")
 
         await session.commit()
 
