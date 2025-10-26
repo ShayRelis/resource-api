@@ -5,7 +5,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_tenant_db
 from app.crud import version as crud_version
 from app.models import User
 from app.schemas import VersionCreate, VersionResponse, VersionUpdate
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/", response_model=VersionResponse, status_code=status.HTTP_201_CREATED)
 async def create_version(
     version_in: VersionCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -36,7 +36,7 @@ async def create_version(
 
 @router.get("/", response_model=List[VersionResponse])
 async def list_versions(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
@@ -60,7 +60,7 @@ async def list_versions(
 @router.get("/{version_id}", response_model=VersionResponse)
 async def get_version(
     version_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -90,7 +90,7 @@ async def get_version(
 async def update_version(
     version_id: int,
     version_in: VersionUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -121,7 +121,7 @@ async def update_version(
 @router.delete("/{version_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_version(
     version_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """

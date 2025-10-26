@@ -11,7 +11,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     phone: Optional[str] = None
-    company_id: Optional[int] = None
+    company_id: int  # Required for registration
     role: UserRole = UserRole.user
 
 
@@ -19,7 +19,6 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-    company_id: Optional[int] = None
     is_active: Optional[bool] = None
     role: Optional[UserRole] = None
 
@@ -29,7 +28,6 @@ class UserResponse(BaseModel):
     name: str
     email: str
     phone: Optional[str] = None
-    company_id: Optional[int] = None
     role: UserRole
     is_active: bool
     created_at: datetime

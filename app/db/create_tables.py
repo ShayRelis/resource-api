@@ -10,9 +10,10 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 import app.models  # noqa: F401 - ensure models are registered with Base
 from app.core.config import get_settings
-from app.db.database import Base
+from app.db.database import PublicBase, TenantBase
 
-async def create_tables():
+async def create_public_tables():
+    """Create public schema tables (companies, user_company_lookup)."""
     settings = get_settings()
     
     # Create async engine
@@ -23,9 +24,25 @@ async def create_tables():
     )
     
     async with engine.begin() as conn:
-        # Create all tables
-        await conn.run_sync(Base.metadata.create_all)
-        print("All tables created successfully!")
+        # Create all public schema tables
+        await conn.run_sync(PublicBase.metadata.create_all)
+        print("✓ Public schema tables created successfully!")
+
+async def create_tenant_schema_tables(company_id: int):
+    """
+    Create tenant schema tables for a specific company.
+    
+    This is typically called automatically when a company is created,
+    but can be used manually for migrations or testing.
+    """
+    from app.db.database import create_company_schema
+    
+    await create_company_schema(company_id, seed_data=True)
+    print(f"✓ Tenant schema for company_{company_id} created successfully!")
 
 if __name__ == "__main__":
-    asyncio.run(create_tables()) 
+    print("Creating public schema tables...")
+    asyncio.run(create_public_tables())
+    print("\nNote: Tenant schemas are created automatically when companies are created.")
+    print("To manually create a tenant schema, use:")
+    print("  python -c 'from app.db.create_tables import create_tenant_schema_tables; import asyncio; asyncio.run(create_tenant_schema_tables(1))'") 

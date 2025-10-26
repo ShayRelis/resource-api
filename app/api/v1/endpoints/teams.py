@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_tenant_db
 from app.crud import team as crud_team
 from app.models import User
 from app.schemas import TeamCreate, TeamResponse, TeamUpdate
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.post("/", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 async def create_team(
     team_in: TeamCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -53,7 +53,7 @@ async def create_team(
 
 @router.get("/", response_model=List[TeamResponse])
 async def list_teams(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
@@ -77,7 +77,7 @@ async def list_teams(
 @router.get("/{team_id}", response_model=TeamResponse)
 async def get_team(
     team_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -107,7 +107,7 @@ async def get_team(
 async def update_team(
     team_id: int,
     team_in: TeamUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -138,7 +138,7 @@ async def update_team(
 @router.delete("/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_team(
     team_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """

@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 from sqlalchemy.sql import func
 
-from app.db.database import Base
+from app.db.database import TenantBase
 
-class ContainerImage(Base):
+class ContainerImage(TenantBase):
     __tablename__ = "container_images"
 
     id = Column(Integer, primary_key=True, index=True)

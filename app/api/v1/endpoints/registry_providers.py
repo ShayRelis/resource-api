@@ -5,7 +5,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_tenant_db
 from app.crud import registry_provider as crud_registry_provider
 from app.models import User
 from app.schemas import RegistryProviderCreate, RegistryProviderResponse, RegistryProviderUpdate
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/", response_model=RegistryProviderResponse, status_code=status.HTTP_201_CREATED)
 async def create_registry_provider(
     registry_provider_in: RegistryProviderCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -36,7 +36,7 @@ async def create_registry_provider(
 
 @router.get("/", response_model=List[RegistryProviderResponse])
 async def list_registry_providers(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
@@ -60,7 +60,7 @@ async def list_registry_providers(
 @router.get("/{registry_provider_id}", response_model=RegistryProviderResponse)
 async def get_registry_provider(
     registry_provider_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -90,7 +90,7 @@ async def get_registry_provider(
 async def update_registry_provider(
     registry_provider_id: int,
     registry_provider_in: RegistryProviderUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -121,7 +121,7 @@ async def update_registry_provider(
 @router.delete("/{registry_provider_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_registry_provider(
     registry_provider_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """

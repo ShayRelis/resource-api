@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_tenant_db
 from app.crud import registry as crud_registry
 from app.models import User
 from app.schemas import RegistryCreate, RegistryResponse, RegistryUpdate
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.post("/", response_model=RegistryResponse, status_code=status.HTTP_201_CREATED)
 async def create_registry(
     registry_in: RegistryCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -59,7 +59,7 @@ async def create_registry(
 
 @router.get("/", response_model=List[RegistryResponse])
 async def list_registries(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
@@ -83,7 +83,7 @@ async def list_registries(
 @router.get("/{registry_id}", response_model=RegistryResponse)
 async def get_registry(
     registry_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -113,7 +113,7 @@ async def get_registry(
 async def update_registry(
     registry_id: int,
     registry_in: RegistryUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -144,7 +144,7 @@ async def update_registry(
 @router.delete("/{registry_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_registry(
     registry_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """

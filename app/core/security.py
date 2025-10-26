@@ -16,6 +16,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 class TokenData(BaseModel):
     """Token data model."""
     email: Optional[str] = None
+    company_id: Optional[int] = None
 
 
 # Password hashing context
@@ -92,9 +93,10 @@ def decode_access_token(token: str) -> Optional[TokenData]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
-        if email is None:
+        company_id: int = payload.get("company_id")
+        if email is None or company_id is None:
             return None
-        return TokenData(email=email)
+        return TokenData(email=email, company_id=company_id)
     except JWTError:
         return None
 

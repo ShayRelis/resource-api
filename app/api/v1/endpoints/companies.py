@@ -20,16 +20,27 @@ async def create_company(
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
-    Create a new company.
+    Create a new company. Requires admin role.
     
     Args:
         company_in: Company creation data
         db: Database session
-        current_user: Current authenticated user
+        current_user: Current authenticated user (must be admin)
         
     Returns:
         Created company
+        
+    Raises:
+        HTTPException: If user is not an admin
     """
+    # Check if user is admin
+    from app.models.user import UserRole
+    if current_user.role != UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can create companies"
+        )
+    
     company = await crud_company.create(db, obj_in=company_in)
     return company
 

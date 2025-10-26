@@ -5,7 +5,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_tenant_db
 from app.crud import service_type as crud_service_type
 from app.models import User
 from app.schemas import ServiceTypeCreate, ServiceTypeResponse, ServiceTypeUpdate
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/", response_model=ServiceTypeResponse, status_code=status.HTTP_201_CREATED)
 async def create_service_type(
     service_type_in: ServiceTypeCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -36,7 +36,7 @@ async def create_service_type(
 
 @router.get("/", response_model=List[ServiceTypeResponse])
 async def list_service_types(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
@@ -60,7 +60,7 @@ async def list_service_types(
 @router.get("/{service_type_id}", response_model=ServiceTypeResponse)
 async def get_service_type(
     service_type_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -90,7 +90,7 @@ async def get_service_type(
 async def update_service_type(
     service_type_id: int,
     service_type_in: ServiceTypeUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -121,7 +121,7 @@ async def update_service_type(
 @router.delete("/{service_type_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_service_type(
     service_type_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """

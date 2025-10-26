@@ -5,7 +5,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_tenant_db
 from app.crud import component as crud_component
 from app.models import User
 from app.schemas import ComponentCreate, ComponentResponse, ComponentUpdate
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/", response_model=ComponentResponse, status_code=status.HTTP_201_CREATED)
 async def create_component(
     component_in: ComponentCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -54,7 +54,7 @@ async def create_component(
 
 @router.get("/", response_model=List[ComponentResponse])
 async def list_components(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
@@ -97,7 +97,7 @@ async def list_components(
 @router.get("/{component_id}", response_model=ComponentResponse)
 async def get_component(
     component_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -145,7 +145,7 @@ async def get_component(
 async def update_component(
     component_id: int,
     component_in: ComponentUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -197,7 +197,7 @@ async def update_component(
 @router.delete("/{component_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_component(
     component_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """

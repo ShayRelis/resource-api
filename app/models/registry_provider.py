@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.sql import func
 
-from app.db.database import Base
+from app.db.database import TenantBase
 
-class RegistryProvider(Base):
+class RegistryProvider(TenantBase):
     __tablename__ = "registry_providers"
 
     id = Column(Integer, primary_key=True, index=True)

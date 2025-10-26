@@ -1,6 +1,6 @@
 """SQLAlchemy models package."""
 
-from app.db.database import Base
+from app.db.database import Base, PublicBase, TenantBase
 
 from .cloud_provider import CloudProvider
 from .company import Company
@@ -14,12 +14,15 @@ from .service_type import ServiceType
 from .tag import Tag
 from .team import Team
 from .user import UserRole, User
+from .user_company_lookup import UserCompanyLookup
 from .version import Version, version_container_images
 
 
 # Make all models available at package level
 __all__ = [
     "Base",
+    "PublicBase",
+    "TenantBase",
     "CloudProvider",
     "Company",
     "Component",
@@ -37,6 +40,7 @@ __all__ = [
     "Team",
     "User",
     "UserRole",
+    "UserCompanyLookup",
     "Version",
     "version_container_images",
 ]

@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.sql import func
 
-from app.db.database import Base
+from app.db.database import TenantBase
 
-class ServiceType(Base):
+class ServiceType(TenantBase):
     __tablename__ = "service_types"
 
     id = Column(Integer, primary_key=True, index=True)

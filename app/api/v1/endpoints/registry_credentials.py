@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_tenant_db
 from app.crud import registry_credential as crud_registry_credential
 from app.models import User
 from app.schemas import RegistryCredentialCreate, RegistryCredentialResponse, RegistryCredentialUpdate
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.post("/", response_model=RegistryCredentialResponse, status_code=status.HTTP_201_CREATED)
 async def create_registry_credential(
     registry_credential_in: RegistryCredentialCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -53,7 +53,7 @@ async def create_registry_credential(
 
 @router.get("/", response_model=List[RegistryCredentialResponse])
 async def list_registry_credentials(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
@@ -77,7 +77,7 @@ async def list_registry_credentials(
 @router.get("/{registry_credential_id}", response_model=RegistryCredentialResponse)
 async def get_registry_credential(
     registry_credential_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -107,7 +107,7 @@ async def get_registry_credential(
 async def update_registry_credential(
     registry_credential_id: int,
     registry_credential_in: RegistryCredentialUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -138,7 +138,7 @@ async def update_registry_credential(
 @router.delete("/{registry_credential_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_registry_credential(
     registry_credential_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """

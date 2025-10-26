@@ -5,7 +5,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_active_user, get_db
+from app.api.deps import get_current_active_user, get_tenant_db
 from app.crud import environment as crud_environment
 from app.models import User
 from app.schemas.environment import EnvironmentCreate, EnvironmentResponse, EnvironmentUpdate
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/", response_model=EnvironmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_environment(
     environment_in: EnvironmentCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -36,7 +36,7 @@ async def create_environment(
 
 @router.get("/", response_model=List[EnvironmentResponse])
 async def list_environments(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
@@ -60,7 +60,7 @@ async def list_environments(
 @router.get("/{environment_id}", response_model=EnvironmentResponse)
 async def get_environment(
     environment_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -90,7 +90,7 @@ async def get_environment(
 async def update_environment(
     environment_id: int,
     environment_in: EnvironmentUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -121,7 +121,7 @@ async def update_environment(
 @router.delete("/{environment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_environment(
     environment_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_tenant_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """

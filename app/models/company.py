@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.sql import func
 
-from app.db.database import Base
+from app.db.database import PublicBase
 
-class Company(Base):
+class Company(PublicBase):
     __tablename__ = "companies"
 
     id = Column(Integer, primary_key=True, index=True)

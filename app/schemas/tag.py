@@ -6,18 +6,15 @@ from pydantic import BaseModel
 
 class TagCreate(BaseModel):
     name: str
-    company_id: int
 
 
 class TagUpdate(BaseModel):
     name: Optional[str] = None
-    company_id: Optional[int] = None
 
 
 class TagResponse(BaseModel):
     id: int
     name: str
-    company_id: int
     created_at: datetime
     updated_at: datetime
 
