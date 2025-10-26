@@ -12,7 +12,7 @@ from app.db.database import async_session
 from app.models import (
     Company, User, UserRole, CloudProvider, RegistryProvider, 
     ServiceType, Tag, Team, RegistryCredential, Registry, ContainerImage, Version,
-    Component, component_teams, component_tags, component_container_images, component_versions
+    Environment, Component, component_teams, component_tags, component_container_images, component_versions
 )
 
 
@@ -177,6 +177,40 @@ VERSIONS = [
             ("relis-frontend", "v2.1.0"),
             ("relis-worker", "v1.0.0"),
         ],
+    },
+]
+
+
+ENVIRONMENTS = [
+    {
+        "name": "development",
+        "description": "Development environment for testing new features",
+        "version_name": "Release 1.0.0",
+        "company_name": "Relis",
+    },
+    {
+        "name": "staging",
+        "description": "Staging environment for pre-production testing",
+        "version_name": "Release 1.0.0",
+        "company_name": "Relis",
+    },
+    {
+        "name": "production",
+        "description": "Production environment serving live traffic",
+        "version_name": "Release 1.0.1",
+        "company_name": "Relis",
+    },
+    {
+        "name": "qa",
+        "description": "QA environment for quality assurance testing",
+        "version_name": "Release 1.0.0",
+        "company_name": "Relis",
+    },
+    {
+        "name": "production",
+        "description": "AWS production environment",
+        "version_name": "Release 1.0.1",
+        "company_name": "AWS",
     },
 ]
 
@@ -515,6 +549,41 @@ async def seed():
                 print(f"  - Version already exists: {version.name}")
 
             version_by_name[version.name] = version
+
+        # Seed environments
+        print("\nSeeding environments...")
+        for payload in ENVIRONMENTS:
+            # Get version and company
+            version = version_by_name.get(payload["version_name"])
+            company = company_by_name.get(payload["company_name"])
+            
+            if version and company:
+                # Check based on unique constraint (name + version_id)
+                result = await session.execute(
+                    select(Environment).where(
+                        Environment.name == payload["name"],
+                        Environment.version_id == version.id
+                    )
+                )
+                environment = result.scalar_one_or_none()
+                
+                if environment is None:
+                    environment = Environment(
+                        name=payload["name"],
+                        description=payload["description"],
+                        version_id=version.id,
+                        company_id=company.id,
+                    )
+                    session.add(environment)
+                    await session.flush()
+                    print(f"  ✓ Created environment: {environment.name} (Version: {payload['version_name']}, Company: {payload['company_name']})")
+                else:
+                    print(f"  - Environment already exists: {environment.name} (Version: {payload['version_name']})")
+            else:
+                if not version:
+                    print(f"  ✗ Version not found: {payload['version_name']}")
+                if not company:
+                    print(f"  ✗ Company not found: {payload['company_name']}")
 
         # Seed components
         print("\nSeeding components...")

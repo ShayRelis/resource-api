@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     registries,
     registry_credentials,
     container_images,
+    environments,
     service_types,
     tags,
     versions,
@@ -33,6 +34,7 @@ api_router.include_router(registry_providers.router, prefix="/registry-providers
 api_router.include_router(registries.router, prefix="/registries", tags=["registries"])
 api_router.include_router(registry_credentials.router, prefix="/registry-credentials", tags=["registry-credentials"])
 api_router.include_router(container_images.router, prefix="/container-images", tags=["container-images"])
+api_router.include_router(environments.router, prefix="/environments", tags=["environments"])
 api_router.include_router(service_types.router, prefix="/service-types", tags=["service-types"])
 api_router.include_router(tags.router, prefix="/tags", tags=["tags"])
 api_router.include_router(versions.router, prefix="/versions", tags=["versions"])

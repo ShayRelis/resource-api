@@ -9,6 +9,7 @@ from app.crud.crud_registry_provider import registry_provider
 from app.crud.crud_registry import registry
 from app.crud.crud_registry_credential import registry_credential
 from app.crud.crud_container_image import container_image
+from app.crud.crud_environment import environment
 from app.crud.crud_service_type import service_type
 from app.crud.crud_tag import tag
 from app.crud.crud_version import version
@@ -23,6 +24,7 @@ __all__ = [
     "registry",
     "registry_credential",
     "container_image",
+    "environment",
     "service_type",
     "tag",
     "version",

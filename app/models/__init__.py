@@ -6,6 +6,7 @@ from .cloud_provider import CloudProvider
 from .company import Company
 from .component import Component, component_teams, component_tags, component_container_images, component_versions
 from .container_image import ContainerImage
+from .environment import Environment
 from .registry import Registry
 from .registry_credential import RegistryCredential
 from .registry_provider import RegistryProvider
@@ -27,6 +28,7 @@ __all__ = [
     "component_container_images",
     "component_versions",
     "ContainerImage",
+    "Environment",
     "Registry",
     "RegistryCredential",
     "RegistryProvider",

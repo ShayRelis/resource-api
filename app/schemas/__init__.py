@@ -16,6 +16,9 @@ from app.schemas.cloud_provider import CloudProviderCreate, CloudProviderUpdate,
 # Container Image Schemas
 from app.schemas.container_image import ContainerImageCreate, ContainerImageUpdate, ContainerImageResponse
 
+# Environment Schemas
+from app.schemas.environment import EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse
+
 # Registry Credential Schemas
 from app.schemas.registry_credential import RegistryCredentialCreate, RegistryCredentialUpdate, RegistryCredentialResponse
 
@@ -62,6 +65,10 @@ __all__ = [
     "ContainerImageCreate",
     "ContainerImageUpdate",
     "ContainerImageResponse",
+    # Environment
+    "EnvironmentCreate",
+    "EnvironmentUpdate",
+    "EnvironmentResponse",
     # Registry Credential
     "RegistryCredentialCreate",
     "RegistryCredentialUpdate",
