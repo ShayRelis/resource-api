@@ -11,7 +11,6 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     phone: Optional[str] = None
-    company_id: int  # Required for registration
     role: UserRole = UserRole.user
 
 

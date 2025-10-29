@@ -43,7 +43,6 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             name=obj_in.name,
             email=obj_in.email,
             phone=obj_in.phone,
-            company_id=obj_in.company_id,
             password_hash=get_password_hash(obj_in.password),
             role=obj_in.role,
         )

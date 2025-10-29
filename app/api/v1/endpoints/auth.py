@@ -6,82 +6,15 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.api.deps import get_db
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.crud import user as crud_user
 from app.crud.crud_user_company_lookup import user_company_lookup as crud_lookup
 from app.db.database import get_tenant_session
-from app.models.company import Company
-from app.schemas import Token, UserCreate, UserResponse
+from app.schemas import Token
 
 router = APIRouter()
-
-
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(
-    user_in: UserCreate,
-    public_db: AsyncSession = Depends(get_db),
-) -> Any:
-    """
-    Register a new user.
-    
-    Args:
-        user_in: User creation data (must include company_id)
-        public_db: Public database session
-        
-    Returns:
-        Created user
-        
-    Raises:
-        HTTPException: If email already registered or company doesn't exist
-    """
-    # Validate company_id is provided
-    if not user_in.company_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="company_id is required for registration",
-        )
-    
-    # Validate company exists
-    result = await public_db.execute(
-        select(Company).filter(Company.id == user_in.company_id)
-    )
-    company = result.scalar_one_or_none()
-    if not company:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Company not found",
-        )
-    
-    # Check if email already registered in lookup table
-    existing_lookup = await crud_lookup.get_by_email(public_db, email=user_in.email)
-    if existing_lookup:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
-        )
-    
-    # Create user in tenant schema
-    async for tenant_db in get_tenant_session(user_in.company_id):
-        # Check if user exists in tenant schema (extra safety)
-        existing_user = await crud_user.get_by_email(tenant_db, email=user_in.email)
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered",
-            )
-        
-        # Create user in tenant schema
-        user = await crud_user.create(tenant_db, obj_in=user_in)
-        
-        # Create lookup entry in public schema
-        await crud_lookup.create_entry(
-            public_db, email=user.email, company_id=user_in.company_id
-        )
-        
-        return user
 
 
 @router.post("/login", response_model=Token)

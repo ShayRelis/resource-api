@@ -5,8 +5,9 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_active_user, get_tenant_db
+from app.api.deps import get_current_active_user, get_tenant_db, get_db, get_company_id_from_token
 from app.crud import user as crud_user
+from app.crud.crud_user_company_lookup import user_company_lookup as crud_lookup
 from app.models import User
 from app.schemas import UserCreate, UserResponse, UserUpdate
 
@@ -17,6 +18,8 @@ router = APIRouter()
 async def create_user(
     user_in: UserCreate,
     db: AsyncSession = Depends(get_tenant_db),
+    public_db: AsyncSession = Depends(get_db),
+    company_id: int = Depends(get_company_id_from_token),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
@@ -24,7 +27,9 @@ async def create_user(
     
     Args:
         user_in: User creation data
-        db: Database session
+        db: Tenant database session
+        public_db: Public database session
+        company_id: Company ID from authentication token
         current_user: Current authenticated user
         
     Returns:
@@ -33,13 +38,28 @@ async def create_user(
     Raises:
         HTTPException: If email already registered
     """
+    # Check if email already exists in lookup table (across all companies)
+    existing_lookup = await crud_lookup.get_by_email(public_db, email=user_in.email)
+    if existing_lookup:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+    
+    # Check if user exists in current tenant schema (extra safety)
     user = await crud_user.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
+    
+    # Create user in tenant schema
     user = await crud_user.create(db, obj_in=user_in)
+    
+    # Create lookup entry in public schema
+    await crud_lookup.create_entry(public_db, email=user.email, company_id=company_id)
+    
     return user
 
 
@@ -131,6 +151,7 @@ async def update_user(
 async def delete_user(
     user_id: int,
     db: AsyncSession = Depends(get_tenant_db),
+    public_db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
     """
@@ -138,7 +159,8 @@ async def delete_user(
     
     Args:
         user_id: User ID
-        db: Database session
+        db: Tenant database session
+        public_db: Public database session
         current_user: Current authenticated user
         
     Raises:
@@ -150,5 +172,10 @@ async def delete_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+    
+    # Delete user from tenant schema
     await crud_user.delete(db, id=user_id)
+    
+    # Delete lookup entry from public schema
+    await crud_lookup.delete_by_email(public_db, email=user.email)
 
