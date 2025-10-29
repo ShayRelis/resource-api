@@ -28,31 +28,14 @@ async def test_api():
         print(f"   Status: {response.status_code}")
         print(f"   Response: {response.json()}")
     
-    # Test 3: Register a user
-    print("\n3. Testing user registration...")
+    # Test 3: Login (user must be bootstrapped first)
+    print("\n3. Testing user login...")
+    print("   Note: You must first create an admin user using bootstrap_admin.py")
     user_data = {
-        "name": "Test User",
         "email": "test@example.com",
-        "password": "testpass123",
-        "role": "user"
+        "password": "testpass123"
     }
     
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{base_url}/api/v1/auth/register",
-            json=user_data
-        )
-        print(f"   Status: {response.status_code}")
-        if response.status_code == 201:
-            print(f"   ✅ User created successfully!")
-            print(f"   User ID: {response.json()['id']}")
-        elif response.status_code == 400:
-            print(f"   ⚠️  User already exists (this is OK for subsequent runs)")
-        else:
-            print(f"   ❌ Error: {response.json()}")
-    
-    # Test 4: Login
-    print("\n4. Testing user login...")
     login_data = {
         "username": user_data["email"],  # OAuth2 uses 'username' field
         "password": user_data["password"]
@@ -73,8 +56,8 @@ async def test_api():
             print(f"   ❌ Login failed: {response.json()}")
             return
     
-    # Test 5: Access protected endpoint
-    print("\n5. Testing protected endpoint (list users)...")
+    # Test 4: Access protected endpoint
+    print("\n4. Testing protected endpoint (list users)...")
     headers = {"Authorization": f"Bearer {token}"}
     
     async with httpx.AsyncClient() as client:
@@ -89,8 +72,8 @@ async def test_api():
         else:
             print(f"   ❌ Error: {response.json()}")
     
-    # Test 6: Create a company
-    print("\n6. Testing company creation...")
+    # Test 5: Create a company
+    print("\n5. Testing company creation...")
     company_data = {
         "name": "Test Company Inc."
     }
@@ -108,8 +91,8 @@ async def test_api():
             print(f"   ✅ Company created successfully!")
             print(f"   Company ID: {company_id}")
             
-            # Test 7: Update the company
-            print("\n7. Testing company update...")
+            # Test 6: Update the company
+            print("\n6. Testing company update...")
             update_data = {
                 "name": "Test Company Inc. (Updated)"
             }
@@ -124,8 +107,8 @@ async def test_api():
                 print(f"   ✅ Company updated successfully!")
                 print(f"   New name: {response.json()['name']}")
             
-            # Test 8: Get the company
-            print("\n8. Testing company retrieval...")
+            # Test 7: Get the company
+            print("\n7. Testing company retrieval...")
             response = await client.get(
                 f"{base_url}/api/v1/companies/{company_id}",
                 headers=headers
@@ -135,8 +118,8 @@ async def test_api():
                 print(f"   ✅ Company retrieved successfully!")
                 print(f"   Company: {response.json()['name']}")
             
-            # Test 9: List companies
-            print("\n9. Testing company listing with pagination...")
+            # Test 8: List companies
+            print("\n8. Testing company listing with pagination...")
             response = await client.get(
                 f"{base_url}/api/v1/companies/?skip=0&limit=10",
                 headers=headers
@@ -146,8 +129,8 @@ async def test_api():
                 companies = response.json()
                 print(f"   ✅ Successfully retrieved {len(companies)} company(ies)")
             
-            # Test 10: Delete the company
-            print("\n10. Testing company deletion...")
+            # Test 9: Delete the company
+            print("\n9. Testing company deletion...")
             response = await client.delete(
                 f"{base_url}/api/v1/companies/{company_id}",
                 headers=headers
