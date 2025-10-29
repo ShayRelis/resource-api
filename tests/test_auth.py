@@ -2,95 +2,18 @@
 
 import pytest
 import httpx
-
-
-class TestUserRegistration:
-    """Test user registration endpoint."""
-
-    async def test_register_user_success(self, async_client: httpx.AsyncClient):
-        """Test successful user registration."""
-        user_data = {
-            "name": "New User",
-            "email": "newuser@example.com",
-            "password": "password123",
-            "role": "user"
-        }
-        response = await async_client.post("/api/v1/auth/register", json=user_data)
-        
-        assert response.status_code == 201
-        data = response.json()
-        assert data["email"] == user_data["email"]
-        assert data["name"] == user_data["name"]
-        assert "id" in data
-        assert "password" not in data  # Password should not be returned
-
-    async def test_register_duplicate_email(self, async_client: httpx.AsyncClient):
-        """Test registration with duplicate email fails."""
-        user_data = {
-            "name": "User One",
-            "email": "duplicate@example.com",
-            "password": "password123",
-            "role": "user"
-        }
-        
-        # Register first time
-        response1 = await async_client.post("/api/v1/auth/register", json=user_data)
-        assert response1.status_code == 201
-        
-        # Try to register again with same email
-        response2 = await async_client.post("/api/v1/auth/register", json=user_data)
-        assert response2.status_code == 400
-        assert "already registered" in response2.json()["detail"].lower()
-
-    async def test_register_invalid_email(self, async_client: httpx.AsyncClient):
-        """Test registration with invalid email format fails."""
-        user_data = {
-            "name": "Invalid Email User",
-            "email": "not-an-email",
-            "password": "password123",
-            "role": "user"
-        }
-        response = await async_client.post("/api/v1/auth/register", json=user_data)
-        assert response.status_code == 422  # Validation error
-
-    async def test_register_missing_required_fields(self, async_client: httpx.AsyncClient):
-        """Test registration with missing required fields fails."""
-        user_data = {
-            "name": "Incomplete User"
-            # Missing email and password
-        }
-        response = await async_client.post("/api/v1/auth/register", json=user_data)
-        assert response.status_code == 422  # Validation error
-
-    async def test_register_with_optional_fields(self, async_client: httpx.AsyncClient):
-        """Test registration with optional fields."""
-        user_data = {
-            "name": "Complete User",
-            "email": "complete@example.com",
-            "password": "password123",
-            "phone": "+1234567890",
-            "role": "admin"
-        }
-        response = await async_client.post("/api/v1/auth/register", json=user_data)
-        
-        assert response.status_code == 201
-        data = response.json()
-        assert data["phone"] == user_data["phone"]
-        assert data["role"] == user_data["role"]
+from typing import Dict
 
 
 class TestUserLogin:
     """Test user login endpoint."""
 
-    async def test_login_success(self, async_client: httpx.AsyncClient, test_user_data: dict):
+    async def test_login_success(self, async_client: httpx.AsyncClient, test_user: Dict[str, str]):
         """Test successful login."""
-        # Register user first
-        await async_client.post("/api/v1/auth/register", json=test_user_data)
-        
-        # Login
+        # Login with test user created by fixture
         login_data = {
-            "username": test_user_data["email"],
-            "password": test_user_data["password"]
+            "username": test_user["email"],
+            "password": test_user["password"]
         }
         response = await async_client.post("/api/v1/auth/login", data=login_data)
         
@@ -99,14 +22,11 @@ class TestUserLogin:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
 
-    async def test_login_wrong_password(self, async_client: httpx.AsyncClient, test_user_data: dict):
+    async def test_login_wrong_password(self, async_client: httpx.AsyncClient, test_user: Dict[str, str]):
         """Test login with wrong password fails."""
-        # Register user first
-        await async_client.post("/api/v1/auth/register", json=test_user_data)
-        
         # Try to login with wrong password
         login_data = {
-            "username": test_user_data["email"],
+            "username": test_user["email"],
             "password": "wrongpassword"
         }
         response = await async_client.post("/api/v1/auth/login", data=login_data)

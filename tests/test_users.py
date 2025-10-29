@@ -16,8 +16,9 @@ class TestUserCRUD:
             "role": "user"
         }
         response = await async_client.post(
-            "/api/v1/auth/register",
-            json=user_data
+            "/api/v1/users/",
+            json=user_data,
+            headers=auth_headers
         )
         
         assert response.status_code == 201
@@ -36,8 +37,9 @@ class TestUserCRUD:
             "role": "user"
         }
         create_response = await async_client.post(
-            "/api/v1/auth/register",
-            json=user_data
+            "/api/v1/users/",
+            json=user_data,
+            headers=auth_headers
         )
         user_id = create_response.json()["id"]
         
@@ -62,8 +64,9 @@ class TestUserCRUD:
             "role": "user"
         }
         create_response = await async_client.post(
-            "/api/v1/auth/register",
-            json=user_data
+            "/api/v1/users/",
+            json=user_data,
+            headers=auth_headers
         )
         user_id = create_response.json()["id"]
         
@@ -90,8 +93,9 @@ class TestUserCRUD:
             "role": "user"
         }
         create_response = await async_client.post(
-            "/api/v1/auth/register",
-            json=user_data
+            "/api/v1/users/",
+            json=user_data,
+            headers=auth_headers
         )
         user_id = create_response.json()["id"]
         
@@ -170,7 +174,7 @@ class TestUserPagination:
 class TestUserValidation:
     """Test user validation."""
 
-    async def test_create_user_invalid_email(self, async_client: httpx.AsyncClient):
+    async def test_create_user_invalid_email(self, async_client: httpx.AsyncClient, auth_headers: dict):
         """Test creating user with invalid email fails."""
         user_data = {
             "name": "Invalid Email",
@@ -178,27 +182,27 @@ class TestUserValidation:
             "password": "password123",
             "role": "user"
         }
-        response = await async_client.post("/api/v1/auth/register", json=user_data)
+        response = await async_client.post("/api/v1/users/", json=user_data, headers=auth_headers)
         assert response.status_code == 422
 
-    async def test_create_user_missing_name(self, async_client: httpx.AsyncClient):
+    async def test_create_user_missing_name(self, async_client: httpx.AsyncClient, auth_headers: dict):
         """Test creating user without name fails."""
         user_data = {
             "email": "noname@example.com",
             "password": "password123",
             "role": "user"
         }
-        response = await async_client.post("/api/v1/auth/register", json=user_data)
+        response = await async_client.post("/api/v1/users/", json=user_data, headers=auth_headers)
         assert response.status_code == 422
 
-    async def test_create_user_missing_password(self, async_client: httpx.AsyncClient):
+    async def test_create_user_missing_password(self, async_client: httpx.AsyncClient, auth_headers: dict):
         """Test creating user without password fails."""
         user_data = {
             "name": "No Password",
             "email": "nopassword@example.com",
             "role": "user"
         }
-        response = await async_client.post("/api/v1/auth/register", json=user_data)
+        response = await async_client.post("/api/v1/users/", json=user_data, headers=auth_headers)
         assert response.status_code == 422
 
 

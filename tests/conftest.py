@@ -83,20 +83,64 @@ async def test_user_data() -> Dict[str, str]:
 
 
 @pytest.fixture
-async def auth_token(async_client: httpx.AsyncClient, test_user_data: Dict[str, str]) -> str:
-    """Register a test user and return an authentication token."""
-    # Try to register the user (might already exist)
-    register_response = await async_client.post(
-        "/api/v1/auth/register",
-        json=test_user_data
-    )
+async def test_company_id(db_session: AsyncSession) -> int:
+    """Create a test company and return its ID."""
+    from app.models.company import Company
+    from app.db.database import create_company_schema
     
+    # Create company in public schema
+    company = Company(name="Test Company")
+    db_session.add(company)
+    await db_session.commit()
+    await db_session.refresh(company)
+    
+    # Create tenant schema for the company
+    await create_company_schema(company.id, seed_data=True)
+    
+    return company.id
+
+
+@pytest.fixture
+async def test_user(db_session: AsyncSession, test_user_data: Dict[str, str], test_company_id: int) -> Dict:
+    """Create a test user in the tenant schema and return user data with company_id."""
+    from app.models.user import User, UserRole
+    from app.models.user_company_lookup import UserCompanyLookup
+    from app.core.security import get_password_hash
+    from app.db.database import get_tenant_session
+    
+    # Create user in tenant schema
+    async for tenant_session in get_tenant_session(test_company_id):
+        user = User(
+            name=test_user_data["name"],
+            email=test_user_data["email"],
+            password_hash=get_password_hash(test_user_data["password"]),
+            role=UserRole[test_user_data["role"]],
+            is_active=True
+        )
+        tenant_session.add(user)
+        await tenant_session.commit()
+        await tenant_session.refresh(user)
+    
+    # Create user_company_lookup entry in public schema
+    lookup = UserCompanyLookup(
+        email=test_user_data["email"],
+        company_id=test_company_id
+    )
+    db_session.add(lookup)
+    await db_session.commit()
+    
+    return {**test_user_data, "company_id": test_company_id}
+
+
+@pytest.fixture
+async def auth_token(async_client: httpx.AsyncClient, test_user: Dict[str, str]) -> str:
+    """Login with test user and return an authentication token."""
     # Login to get the token
     login_response = await async_client.post(
         "/api/v1/auth/login",
         data={
-            "username": test_user_data["email"],
-            "password": test_user_data["password"]
+            "username": test_user["email"],
+            "password": test_user["password"]
         }
     )
     
