@@ -1,5 +1,6 @@
 """User endpoints."""
 
+import logging
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -10,6 +11,8 @@ from app.crud import user as crud_user
 from app.crud.crud_user_company_lookup import user_company_lookup as crud_lookup
 from app.models import User
 from app.schemas import UserCreate, UserResponse, UserUpdate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -38,9 +41,12 @@ async def create_user(
     Raises:
         HTTPException: If email already registered
     """
+    logger.info(f"Attempting to create user with email: {user_in.email} for company_id: {company_id}")
+    
     # Check if email already exists in lookup table (across all companies)
     existing_lookup = await crud_lookup.get_by_email(public_db, email=user_in.email)
     if existing_lookup:
+        logger.warning(f"User creation failed: Email {user_in.email} already registered")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
@@ -49,6 +55,7 @@ async def create_user(
     # Check if user exists in current tenant schema (extra safety)
     user = await crud_user.get_by_email(db, email=user_in.email)
     if user:
+        logger.warning(f"User creation failed: Email {user_in.email} already exists in tenant schema")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
@@ -56,10 +63,28 @@ async def create_user(
     
     # Create user in tenant schema
     user = await crud_user.create(db, obj_in=user_in)
+    logger.info(f"User created in tenant schema: {user.email} (id: {user.id})")
     
-    # Create lookup entry in public schema
-    await crud_lookup.create_entry(public_db, email=user.email, company_id=company_id)
+    # Create lookup entry in public schema with error handling and rollback
+    try:
+        await crud_lookup.create_entry(public_db, email=user.email, company_id=company_id)
+        logger.info(f"User company lookup entry created: {user.email} -> company_id: {company_id}")
+    except Exception as e:
+        logger.error(f"Failed to create lookup entry for {user.email}. Rolling back user creation. Error: {str(e)}")
+        # Rollback: Delete the user from tenant schema
+        try:
+            await crud_user.delete(db, id=user.id)
+            logger.info(f"Successfully rolled back user creation for {user.email}")
+        except Exception as rollback_error:
+            logger.critical(f"CRITICAL: Failed to rollback user creation for {user.email}. Error: {str(rollback_error)}")
+        
+        # Raise error to client
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create user lookup entry: {str(e)}",
+        )
     
+    logger.info(f"User creation completed successfully: {user.email}")
     return user
 
 
@@ -168,14 +193,22 @@ async def delete_user(
     """
     user = await crud_user.get(db, id=user_id)
     if not user:
+        logger.warning(f"User deletion failed: User {user_id} not found")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
     
+    logger.info(f"Deleting user: {user.email} (id: {user_id})")
+    
     # Delete user from tenant schema
     await crud_user.delete(db, id=user_id)
+    logger.info(f"User deleted from tenant schema: {user.email}")
     
     # Delete lookup entry from public schema
-    await crud_lookup.delete_by_email(public_db, email=user.email)
+    deleted = await crud_lookup.delete_by_email(public_db, email=user.email)
+    if deleted:
+        logger.info(f"User company lookup entry deleted: {user.email}")
+    else:
+        logger.warning(f"No lookup entry found to delete for user: {user.email}")
 
