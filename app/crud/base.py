@@ -77,8 +77,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj_in_data = obj_in.model_dump()
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
+        await db.flush()  # Flush to get the ID and populate fields
+        await db.refresh(db_obj)  # Refresh before commit while search_path is still set
         await db.commit()
-        await db.refresh(db_obj)
         return db_obj
 
     async def update(
@@ -110,8 +111,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 setattr(db_obj, field, update_data[field])
         
         db.add(db_obj)
+        await db.flush()  # Flush changes
+        await db.refresh(db_obj)  # Refresh before commit while search_path is still set
         await db.commit()
-        await db.refresh(db_obj)
         return db_obj
 
     async def delete(self, db: AsyncSession, *, id: int) -> Optional[ModelType]:
