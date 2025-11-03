@@ -110,6 +110,8 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     async with async_session() as session:
         try:
+            # Explicitly set search_path to public schema
+            await session.execute(text("SET search_path TO public"))
             yield session
         finally:
             await session.close()
