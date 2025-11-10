@@ -30,10 +30,7 @@ async def create_component(
     Returns:
         Created component with associations
     """
-    component = await crud_component.create_with_associations(db, obj_in=component_in)
-    
-    # Get associations
-    associations = await crud_component.get_associations(db, component_id=component.id)
+    component, associations = await crud_component.create_with_associations(db, obj_in=component_in)
     
     # Build response
     response_data = {
@@ -43,7 +40,6 @@ async def create_component(
         "repository_url": component.repository_url,
         "is_managed": component.is_managed,
         "is_third_party": component.is_third_party,
-        "company_id": component.company_id,
         "created_at": component.created_at,
         "updated_at": component.updated_at,
         **associations,
@@ -84,7 +80,6 @@ async def list_components(
             "repository_url": component.repository_url,
             "is_managed": component.is_managed,
             "is_third_party": component.is_third_party,
-            "company_id": component.company_id,
             "created_at": component.created_at,
             "updated_at": component.updated_at,
             **associations,
@@ -132,7 +127,6 @@ async def get_component(
         "repository_url": component.repository_url,
         "is_managed": component.is_managed,
         "is_third_party": component.is_third_party,
-        "company_id": component.company_id,
         "created_at": component.created_at,
         "updated_at": component.updated_at,
         **associations,
@@ -170,12 +164,9 @@ async def update_component(
             detail="Component not found",
         )
     
-    component = await crud_component.update_with_associations(
+    component, associations = await crud_component.update_with_associations(
         db, db_obj=component, obj_in=component_in
     )
-    
-    # Get associations
-    associations = await crud_component.get_associations(db, component_id=component.id)
     
     # Build response
     response_data = {
@@ -185,7 +176,6 @@ async def update_component(
         "repository_url": component.repository_url,
         "is_managed": component.is_managed,
         "is_third_party": component.is_third_party,
-        "company_id": component.company_id,
         "created_at": component.created_at,
         "updated_at": component.updated_at,
         **associations,

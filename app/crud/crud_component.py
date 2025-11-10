@@ -20,7 +20,7 @@ class CRUDComponent(CRUDBase[Component, ComponentCreate, ComponentUpdate]):
 
     async def create_with_associations(
         self, db: AsyncSession, *, obj_in: ComponentCreate
-    ) -> Component:
+    ) -> tuple[Component, dict]:
         """
         Create a new component with its associations.
         
@@ -29,7 +29,7 @@ class CRUDComponent(CRUDBase[Component, ComponentCreate, ComponentUpdate]):
             obj_in: Component creation data including association IDs
             
         Returns:
-            Created component instance
+            Tuple of (created component instance, associations dict)
         """
         # Extract association IDs
         team_ids = obj_in.team_ids
@@ -70,9 +70,11 @@ class CRUDComponent(CRUDBase[Component, ComponentCreate, ComponentUpdate]):
                 [{"component_id": db_obj.id, "version_id": version_id} for version_id in version_ids]
             )
         
+        # Get associations before commit (while still in tenant schema context)
+        associations = await self.get_associations(db, component_id=db_obj.id)
+        
         await db.commit()
-        await db.refresh(db_obj)
-        return db_obj
+        return db_obj, associations
 
     async def get_associations(
         self, db: AsyncSession, *, component_id: int
@@ -126,7 +128,7 @@ class CRUDComponent(CRUDBase[Component, ComponentCreate, ComponentUpdate]):
         *,
         db_obj: Component,
         obj_in: ComponentUpdate
-    ) -> Component:
+    ) -> tuple[Component, dict]:
         """
         Update a component and its associations.
         
@@ -136,7 +138,7 @@ class CRUDComponent(CRUDBase[Component, ComponentCreate, ComponentUpdate]):
             obj_in: Component update data
             
         Returns:
-            Updated component instance
+            Tuple of (updated component instance, associations dict)
         """
         update_data = obj_in.model_dump(exclude_unset=True)
         
@@ -197,9 +199,11 @@ class CRUDComponent(CRUDBase[Component, ComponentCreate, ComponentUpdate]):
                     [{"component_id": db_obj.id, "version_id": version_id} for version_id in version_ids]
                 )
         
+        # Get associations before commit (while still in tenant schema context)
+        associations = await self.get_associations(db, component_id=db_obj.id)
+        
         await db.commit()
-        await db.refresh(db_obj)
-        return db_obj
+        return db_obj, associations
 
     async def delete_with_associations(
         self, db: AsyncSession, *, id: int
