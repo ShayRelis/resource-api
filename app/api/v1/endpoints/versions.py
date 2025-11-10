@@ -28,10 +28,20 @@ async def create_version(
         current_user: Current authenticated user
         
     Returns:
-        Created version
+        Created version with associations
     """
-    version = await crud_version.create(db, obj_in=version_in)
-    return version
+    version, associations = await crud_version.create_with_associations(db, obj_in=version_in)
+    
+    # Build response
+    response_data = {
+        "id": version.id,
+        "name": version.name,
+        "created_at": version.created_at,
+        "updated_at": version.updated_at,
+        **associations,
+    }
+    
+    return response_data
 
 
 @router.get("/", response_model=List[VersionResponse])
@@ -51,10 +61,24 @@ async def list_versions(
         current_user: Current authenticated user
         
     Returns:
-        List of versions
+        List of versions with their associations
     """
     versions = await crud_version.get_multi(db, skip=skip, limit=limit)
-    return versions
+    
+    # Build response with associations for each version
+    response = []
+    for version in versions:
+        associations = await crud_version.get_associations(db, version_id=version.id)
+        response_data = {
+            "id": version.id,
+            "name": version.name,
+            "created_at": version.created_at,
+            "updated_at": version.updated_at,
+            **associations,
+        }
+        response.append(response_data)
+    
+    return response
 
 
 @router.get("/{version_id}", response_model=VersionResponse)
@@ -72,7 +96,7 @@ async def get_version(
         current_user: Current authenticated user
         
     Returns:
-        Version instance
+        Version instance with associations
         
     Raises:
         HTTPException: If version not found
@@ -83,7 +107,20 @@ async def get_version(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Version not found",
         )
-    return version
+    
+    # Get associations
+    associations = await crud_version.get_associations(db, version_id=version.id)
+    
+    # Build response
+    response_data = {
+        "id": version.id,
+        "name": version.name,
+        "created_at": version.created_at,
+        "updated_at": version.updated_at,
+        **associations,
+    }
+    
+    return response_data
 
 
 @router.put("/{version_id}", response_model=VersionResponse)
@@ -103,7 +140,7 @@ async def update_version(
         current_user: Current authenticated user
         
     Returns:
-        Updated version
+        Updated version with associations
         
     Raises:
         HTTPException: If version not found
@@ -114,8 +151,21 @@ async def update_version(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Version not found",
         )
-    version = await crud_version.update(db, db_obj=version, obj_in=version_in)
-    return version
+    
+    version, associations = await crud_version.update_with_associations(
+        db, db_obj=version, obj_in=version_in
+    )
+    
+    # Build response
+    response_data = {
+        "id": version.id,
+        "name": version.name,
+        "created_at": version.created_at,
+        "updated_at": version.updated_at,
+        **associations,
+    }
+    
+    return response_data
 
 
 @router.delete("/{version_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -141,5 +191,5 @@ async def delete_version(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Version not found",
         )
-    await crud_version.delete(db, id=version_id)
+    await crud_version.delete_with_associations(db, id=version_id)
 
